@@ -1,0 +1,26 @@
+---
+- name: install
+  become: yes
+  apt:
+    cache_valid_time: 86400 # 1 day
+    name:
+      - autojump
+      - curl
+      - fonts-powerline
+      - git
+      - pv # progress bar for zero filling vdi file
+      - stow
+      - tilix
+      - trash-cli
+      - tree
+      - xclip
+      - zsh
+    state: latest
+
+# tilix fix https://github.com/gnunn1/tilix/wiki/VTE-Configuration-Issue
+- name: tilix fix
+  file:
+    src: /etc/profile.d/vte-2.91.sh
+    dest: /etc/profile.d/vte.sh
+    state: link
+

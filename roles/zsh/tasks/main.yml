@@ -1,0 +1,24 @@
+---
+- name: install dependencies
+  become: yes
+  apt:
+    cache_valid_time: 86400
+    name:
+      - git
+      - zsh
+    state: latest
+
+# https://github.com/zsh-users/antigen
+- name: install antigen
+  git:
+    repo: https://github.com/zsh-users/antigen.git
+    dest: ~/.antigen
+    update: yes
+
+# requires re-login
+- name: change shell
+  become: yes
+  user:
+    name: "{{ ansible_env.USER }}"
+    shell: /bin/zsh
+

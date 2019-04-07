@@ -1,0 +1,65 @@
+---
+# https://github.com/creationix/nvm
+- name: install dependencies
+  become: yes
+  apt:
+    cache_valid_time: 86400
+    name:
+      - git
+    state: latest
+
+# make sure nvm exists
+- name: install nvm
+  git:
+    repo: https://github.com/creationix/nvm.git
+    dest: ~/.nvm
+    update: no
+
+# update via command git fetch
+- name: fetch tags
+  command: git fetch --tags origin
+  args:
+    chdir: ~/.nvm
+  changed_when: false
+
+- name: get latest tag
+  shell: git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1)
+  args:
+    chdir: ~/.nvm
+  changed_when: false
+  register: result_latest_tag
+
+- name: checkout latest tag
+  git:
+    repo: https://github.com/creationix/nvm.git
+    dest: ~/.nvm
+    version: "{{ result_latest_tag.stdout }}"
+
+# use template if too many items
+- name: default npm global packages
+  lineinfile:
+    path: ~/.nvm/default-packages
+    line: "{{ item }}"
+    state: present
+    create: yes
+  loop:
+    - "commitizen"
+    - "cz-conventional-changelog"
+
+- name: install node
+  shell: |
+    export NVM_DIR="$HOME/.nvm"
+    \. "$NVM_DIR/nvm.sh"
+    nvm install --latest-npm --no-progress {{ item }}
+  loop:
+    - node
+  changed_when: "'is already installed' not in result_install.stderr"
+  register: result_install
+
+- name: set nvm default alias
+  shell: |
+    export NVM_DIR="$HOME/.nvm"
+    \. "$NVM_DIR/nvm.sh"
+    nvm alias --no-colors default node
+  changed_when: false
+

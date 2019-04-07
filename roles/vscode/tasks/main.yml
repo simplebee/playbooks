@@ -1,0 +1,37 @@
+---
+# https://code.visualstudio.com/docs/setup/linux
+# note - will be added to ubuntu apt-get
+- name: add key
+  become: yes
+  apt_key:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    keyring: /etc/apt/trusted.gpg.d/microsoft.gpg
+    state: present
+
+- name: add repo
+  become: yes
+  apt_repository:
+    repo: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
+    filename: vscode
+    state: present
+
+- name: install vscode
+  become: yes
+  apt:
+    cache_valid_time: 86400
+    name: code
+    state: latest
+
+- name: list extensions
+  command: code --list-extensions
+  changed_when: false
+  register: result_extensions
+  
+- name: install extensions
+  command: code --install-extension {{ item }}
+  loop:
+    - msjsdiag.debugger-for-chrome
+    - dbaeumer.vscode-eslint
+    - esbenp.prettier-vscode
+  when: item not in result_extensions.stdout_lines
+  

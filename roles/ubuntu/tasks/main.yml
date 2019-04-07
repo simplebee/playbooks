@@ -1,0 +1,37 @@
+---
+- name: settings
+  command: "{{item}}"
+  loop:
+    # favorite apps
+    - gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'google-chrome.desktop', 'code.desktop', 'com.gexperts.Tilix.desktop']"
+    # dock icon size
+    - gsettings set org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 32
+    # move dock to bottom
+    - gsettings set org.gnome.shell.extensions.dash-to-dock dock-position 'BOTTOM'
+    # move show apps button to top
+    - gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top true
+    # minimize on click
+    - gsettings set org.gnome.shell.extensions.dash-to-dock click-action 'minimize'
+    # disable dim screen
+    - gsettings set org.gnome.settings-daemon.plugins.power idle-dim false
+    # disable blank screen
+    - gsettings set org.gnome.desktop.session idle-delay 0
+    # automatic suspend battery disable
+    - gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1800
+    - gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+    # automatic suspend ac disable
+    - gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 7200
+    - gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+    # # automatic suspend battery enable 30m
+    # - gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1800
+    # - gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'suspend'
+    # # automatic suspend ac enable 2h
+    # - gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 7200
+    # - gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'suspend'
+  changed_when: false
+
+- name: setup folders
+  file:
+    path: ~/projects/personal
+    state: directory
+

@@ -1,0 +1,61 @@
+---
+- name: install dependencies
+  become: yes
+  apt:
+    cache_valid_time: 86400
+    name:
+      - libgconf-2-4
+    state: latest
+
+- name: check tmp for latest
+  stat:
+    path: /tmp/{{ postman_latest_filename }}
+  register: result_find_tmp
+
+- name: download latest
+  get_url:
+    url: https://dl.pstmn.io/download/latest/linux64
+    dest: /tmp
+  when: result_find_tmp.stat.exists == false
+  register: result_download
+
+- name: delete dir
+  become: yes
+  file:
+    path: /opt/postman
+    state: absent
+
+- name: create dir
+  become: yes
+  file:
+    path: /opt/postman
+    state: directory
+
+- name: unarchive
+  become: yes
+  unarchive:
+    src: /tmp/{{ postman_latest_filename }}
+    dest: /opt/postman
+    extra_opts: [--strip-components=1]
+
+- name: create version file
+  become: yes
+  copy:
+    dest: /opt/postman/version
+    content: |
+      {{ postman_latest_version }}
+      # this was generated my ansible
+
+- name: create desktop file
+  copy:
+    dest: ~/.local/share/applications/Postman.desktop
+    content: |
+      [Desktop Entry]
+      Encoding=UTF-8
+      Name=Postman
+      Exec=/opt/postman/app/Postman %U
+      Icon=/opt/postman/app/resources/app/assets/icon.png
+      Terminal=false
+      Type=Application
+      Categories=Development;
+

@@ -1,0 +1,74 @@
+---
+- name: install dependencies
+  become: yes
+  apt:
+    cache_valid_time: 86400
+    name:
+      - git
+      - stow
+    state: latest
+
+- name: get dotfiles
+  git:
+    repo: https://github.com/simplebee/dotfiles.git
+    dest: ~/.dotfiles
+    update: yes
+
+- name: check files
+  stat:
+    path: "{{ '~' + (item.dir == '') | ternary('','/') + item.dir + '/' + item.file }}"
+  loop:
+    - { name: bash,   dir: "",                  file: .bashrc }
+    - { name: zsh,    dir: "",                  file: .zshrc }
+    - { name: git,    dir: "",                  file: .gitconfig }
+    - { name: cz,     dir: "",                  file: .czrc }
+    - { name: vscode, dir: ".config/Code/User", file: keybindings.json }
+    - { name: vscode, dir: ".config/Code/User", file: settings.json }
+  register: result_link
+
+# only backup regular files
+# result_link.results = [{item:{name...}, stat:{exists...}}, {...}]
+# spammy output to the console, research json_query to reduce size of obj
+- name: create backup folder
+  file:
+    # folder ~/.dotfiles.bak/<package>/<relative dir>
+    path: "{{ '~/.dotfiles.bak' + '/' + item.item.name + (item.item.dir == '') | ternary('','/') + item.item.dir }}"
+    state: directory
+  loop: "{{ result_link.results }}"
+  when: item.stat.exists and item.stat.isreg
+
+- name: backup files
+  copy:
+    src: "{{item.stat.path}}"
+    dest: "{{ '~/.dotfiles.bak' + '/' + item.item.name + (item.item.dir == '') | ternary('','/') + item.item.dir }}"
+    force: yes
+  loop: "{{ result_link.results }}"
+  when: item.stat.exists and item.stat.isreg
+
+- name: delete file
+  file:
+    path: "{{item.stat.path}}"
+    state: absent
+  loop: "{{ result_link.results }}"
+  when: item.stat.exists and item.stat.isreg
+
+# doesn't handle symlinks, dir, stow from diff packages. manually fix
+# changed_when runs every iteration, to access stderr use result_stow.stderr
+# on task completion, every iteration is added to an array on result prop, to access stderr use result_stow.results[i].stderr
+- name: stow
+  command: stow --verbose --restow {{ item }}
+  args:
+    chdir: ~/.dotfiles
+  loop: "{{result_link.results | map(attribute='item') | map(attribute='name') | unique | list }}"
+  changed_when: result_stow.stderr is search('^LINK')
+  register: result_stow
+
+- name: install and update antigen bundles
+  shell: |
+    source "$HOME/.zshrc"
+    antigen update
+  args:
+    executable: /bin/zsh
+  changed_when: "'Installing' in result_antigen.stdout"
+  register: result_antigen
+  

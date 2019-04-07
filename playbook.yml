@@ -1,0 +1,14 @@
+---
+- hosts: local
+  connection: local
+
+  roles:
+    - apt
+    - vscode
+    - chrome
+    - zsh
+    - nvm
+    - postman
+    - ubuntu
+    - dotfiles # run last
+    

@@ -1,0 +1,24 @@
+---
+# https://www.google.com/linuxrepositories/
+# https://www.ubuntuupdates.org/ppa/google_chrome
+- name: add key
+  become: yes
+  apt_key:
+    url: https://dl.google.com/linux/linux_signing_key.pub
+    keyring: /etc/apt/trusted.gpg.d/google.gpg
+    state: present
+
+- name: add repo
+  become: yes
+  apt_repository:
+    repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
+    filename: google-chrome
+    state: present
+
+- name: install
+  become: yes
+  apt:
+    cache_valid_time: 86400
+    name: google-chrome-stable
+    state: latest
+

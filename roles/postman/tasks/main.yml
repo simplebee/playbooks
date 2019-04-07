@@ -1,0 +1,47 @@
+---
+# using version file to track versioning
+# assumes an existing version file, means postman is already installed
+
+# check version
+- name: find existing version file
+  stat:
+    path: /opt/postman/version
+  register: result_find_existing
+
+- name: cat existing version file
+  command: cat /opt/postman/version
+  when: result_find_existing.stat.exists == true
+  changed_when: false
+  register: result_cat
+
+- name: get existing version
+  set_fact:
+    postman_existing_version: "{{ result_cat.stdout | regex_search(regexp) }}"
+  vars:
+    regexp: '[0-9]+\.[0-9]+\.+[0-9]+'
+  when: result_find_existing.stat.exists == true
+  failed_when: postman_existing_version == ""
+
+- name: head request
+  uri:
+    url: https://dl.pstmn.io/download/latest/linux64
+    method: HEAD
+  register: result_header
+
+# get latest version from filename using the content-disposition header
+- name: get latest version and filename
+  set_fact:
+    postman_latest_filename: "{{ result_header.content_disposition | regex_search(regexp, backref_filename) | first }}"
+    postman_latest_version: "{{ result_header.content_disposition | regex_search(regexp, backref_version) | first }}"
+  vars:
+    regexp: '(Postman-linux-x64-([0-9]+\.[0-9]+\.+[0-9]+)\.tar\.gz)'
+    backref_filename: '\1'
+    backref_version: '\2'
+  failed_when: (postman_latest_filename == "") or (postman_latest_version == "")
+
+# install, if not exist or latest version is available
+- name: install
+  include_tasks: install.yml
+  when: (result_find_existing.stat.exists == false) or 
+        (postman_latest_version is version(postman_existing_version, '>'))
+
