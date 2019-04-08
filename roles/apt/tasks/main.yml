@@ -19,6 +19,7 @@
 
 # tilix fix https://github.com/gnunn1/tilix/wiki/VTE-Configuration-Issue
 - name: tilix fix
+  become: yes
   file:
     src: /etc/profile.d/vte-2.91.sh
     dest: /etc/profile.d/vte.sh
