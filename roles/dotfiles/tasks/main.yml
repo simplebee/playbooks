@@ -10,7 +10,7 @@
 
 - name: get dotfiles
   git:
-    repo: https://github.com/simplebee/dotfiles.git
+    repo: git@github.com:simplebee/dotfiles.git
     dest: ~/.dotfiles
     update: yes
 
